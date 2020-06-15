@@ -1,7 +1,13 @@
 'use strict'
 
 const fp = require('fastify-plugin')
-const amqpClient = require('amqplib/callback_api')
+const amqpClient = require('amqplib')
+
+const manageAConn = async (user, pass, host, port, vhost) => {
+  const connection = await amqpClient.connect(`amqp://${user}:${pass}@${host}:${port}/${encodeURIComponent(vhost)}`)
+
+  return connection
+}
 
 function fastifyAmqp (fastify, opts, next) {
   const host = opts.host
@@ -14,6 +20,25 @@ function fastifyAmqp (fastify, opts, next) {
   const user = opts.user || 'guest'
   const pass = opts.pass || 'guest'
   const vhost = opts.vhost || ''
+  const vhosts = opts.vhosts || []
+
+  if (Array.isArray(vhosts) && vhosts.length > 0) {
+    return vhosts.reduce((prev, aVhost) =>
+      prev.then(partialObj =>
+        manageAConn(user, pass, host, port, aVhost)
+          .then(connection => {
+            fastify.addHook('onClose', () => connection.close())
+
+            return {
+              ...partialObj,
+              [aVhost]: connection
+            }
+          }))
+    , Promise.resolve({}))
+      .then(vhostsConns => {
+        fastify.decorate('amqpConn', vhostsConns)
+      })
+  }
 
   amqpClient.connect(`amqp://${user}:${pass}@${host}:${port}/${encodeURIComponent(vhost)}`, function (err, connection) {
     if (err) {
