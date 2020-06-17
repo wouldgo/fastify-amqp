@@ -2,9 +2,11 @@
 
 const fp = require('fastify-plugin')
 const amqpClient = require('amqplib')
+const qs = require('querystring')
 
-const manageAConn = async (user, pass, host, port, vhost) => {
-  const connection = await amqpClient.connect(`amqp://${user}:${pass}@${host}:${port}/${encodeURIComponent(vhost)}`)
+const manageAConn = async (user, pass, host, port, vhost, connectionOpts) => {
+  const connectionOptsStr = qs.stringify(connectionOpts)
+  const connection = await amqpClient.connect(`amqp://${user}:${pass}@${host}:${port}/${encodeURIComponent(vhost)}?${connectionOptsStr}`)
 
   return connection
 }
@@ -21,11 +23,14 @@ function fastifyAmqp (fastify, opts, next) {
   const pass = opts.pass || 'guest'
   const vhost = opts.vhost || ''
   const vhosts = opts.vhosts || []
+  const connectionOpts = opts.connectionOpts || {
+    'heartbeat': 60
+  }
 
   if (Array.isArray(vhosts) && vhosts.length > 0) {
     return vhosts.reduce((prev, aVhost) =>
       prev.then(partialObj =>
-        manageAConn(user, pass, host, port, aVhost)
+        manageAConn(user, pass, host, port, aVhost, connectionOpts)
           .then(connection => {
             fastify.addHook('onClose', () => connection.close())
 
