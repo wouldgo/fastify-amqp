@@ -41,7 +41,7 @@ function fastifyAmqp (fastify, opts, next) {
           }))
     , Promise.resolve({}))
       .then(vhostsConns => {
-        fastify.decorate('amqpConn', vhostsConns)
+        fastify.decorate('amqp', vhostsConns)
       })
   }
 
