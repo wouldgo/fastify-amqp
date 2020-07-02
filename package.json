@@ -27,6 +27,7 @@
   "homepage": "https://github.com/RafaelGSS/fastify-amqp#readme",
   "dependencies": {
     "amqplib": "^0.5.3",
+    "camelcase": "^6.0.0",
     "fastify-plugin": "^1.6.0"
   },
   "devDependencies": {

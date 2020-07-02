@@ -3,6 +3,7 @@
 const fp = require('fastify-plugin')
 const amqpClient = require('amqplib')
 const qs = require('querystring')
+const camelcase = require('camelcase')
 
 const manageAConn = async (user, pass, host, port, vhost, connectionOpts) => {
   const connectionOptsStr = qs.stringify(connectionOpts)
@@ -36,7 +37,7 @@ function fastifyAmqp (fastify, opts, next) {
 
             return {
               ...partialObj,
-              [aVhost]: connection
+              [camelcase(aVhost)]: connection
             }
           }))
     , Promise.resolve({}))
