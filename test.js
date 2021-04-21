@@ -42,7 +42,7 @@ test('localhost me:me to / permitted', async t => {
 })
 
 test('localhost me:me to / publish with channel and he cant', async t => {
-  t.plan(4)
+  t.plan(6)
   const app = Fastify()
 
   try {
@@ -55,9 +55,11 @@ test('localhost me:me to / publish with channel and he cant', async t => {
         }
       },
       channelHandlers: {
-        error: err => {
+        error: (hostname, aVhost, err) => {
           const { message } = err
 
+          t.ok(hostname, 'localhost')
+          t.ok(aVhost, '/')
           t.ok(message, 'Channel closed by server: 404 (NOT-FOUND) with message "NOT_FOUND - no exchange \'not-exists\' in vhost \'/\'"')
         },
         close: () => {
@@ -85,7 +87,7 @@ test('localhost me:me to / publish with channel and he cant', async t => {
 })
 
 test('localhost me:me to / publish with confirm channel and he cant', async t => {
-  t.plan(4)
+  t.plan(6)
   const app = Fastify()
 
   try {
@@ -98,9 +100,11 @@ test('localhost me:me to / publish with confirm channel and he cant', async t =>
         }
       },
       channelHandlers: {
-        error: err => {
+        error: (hostname, aVhost, err) => {
           const { message } = err
 
+          t.ok(hostname, 'localhost')
+          t.ok(aVhost, '/')
           t.ok(message, 'Channel closed by server: 404 (NOT-FOUND) with message "NOT_FOUND - no exchange \'not-exists\' in vhost \'/\'"')
         },
         close: () => {
