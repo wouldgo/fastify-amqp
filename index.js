@@ -1,16 +1,29 @@
-'use strict'
+'use strict';
 
 const fp = require('fastify-plugin')
-const amqpClient = require('amqplib')
-const camelcase = require('camelcase')
-const wrap = (events, hostname, aVhost, what) => {
-  for (const [anEvent, anHandler] of Object.entries(events)) {
-    what.on(anEvent, (...args) => anHandler(hostname, aVhost, ...args))
-  }
+  , amqpClient = require('amqplib')
+  , camelcase = require('camelcase')
+  , wrap = (events, hostname, aVhost, what) => {
+      for (const [anEvent, anHandler] of Object.entries(events)) {
+        what.on(anEvent, (...args) => anHandler(hostname, aVhost, ...args));
+      }
 
-  return what
-}
-const fastifyAmqp = async function fastifyAmqp (fastify, {
+      return what;
+    }
+  , fromConnection = (channelHandlers, hostname, aVhost, aConnection) => ({
+      'createChannel': async() => {
+        const channel = await aConnection.createChannel();
+
+        return wrap(channelHandlers, hostname, aVhost, channel);
+      },
+      'createConfirmChannel': async() => {
+        const channel = await aConnection.createConfirmChannel();
+
+        return wrap(channelHandlers, hostname, aVhost, channel);
+      }
+    });
+
+const fastifyAmqp = async function fastifyAmqp(fastify, {
   protocol = 'amqp',
   hostname = 'localhost',
   port = 5672,
@@ -24,15 +37,17 @@ const fastifyAmqp = async function fastifyAmqp (fastify, {
   connectionHandlers = {},
   channelHandlers = {}
 }) {
-  const currentVhosts = vhosts
+  const currentVhosts = vhosts;
+
   if (vhost != null) {
-    currentVhosts.push(vhost)
+    currentVhosts.push(vhost);
   }
 
   if (vhosts.length === 0) {
-    currentVhosts.push('/')
+    currentVhosts.push('/');
   }
-  const connections = {}
+  const connections = {};
+
   for (const aVhost of currentVhosts) {
     const aConnection = await amqpClient.connect({
       protocol,
@@ -43,30 +58,19 @@ const fastifyAmqp = async function fastifyAmqp (fastify, {
       locale,
       frameMax,
       heartbeat,
-      vhost: aVhost
-    })
+      'vhost': aVhost
+    });
 
-    const wrappedConnection = wrap(connectionHandlers, hostname, aVhost, aConnection)
+    const wrappedConnection = wrap(connectionHandlers, hostname, aVhost, aConnection);
 
-    fastify.addHook('onClose', () => wrappedConnection.close())
-    connections[camelcase(aVhost)] = {
-      createChannel: async () => {
-        const channel = await wrappedConnection.createChannel()
-
-        return wrap(channelHandlers, hostname, aVhost, channel)
-      },
-      createConfirmChannel: async () => {
-        const channel = await wrappedConnection.createConfirmChannel()
-
-        return wrap(channelHandlers, hostname, aVhost, channel)
-      }
-    }
+    fastify.addHook('onClose', () => wrappedConnection.close());
+    connections[camelcase(aVhost)] = fromConnection(channelHandlers, hostname, aVhost, wrappedConnection);
   }
 
-  fastify.decorate('amqp', connections)
-}
+  fastify.decorate('amqp', connections);
+};
 
 module.exports = fp(fastifyAmqp, {
-  fastify: '>=1.0.0',
-  name: 'fastify-amqp'
-})
+  'fastify': '>=1.0.0',
+  'name': 'fastify-amqp'
+});

@@ -4,13 +4,13 @@
   "description": "Fastify AMQP connection plugin, to use with RabbitMQ",
   "main": "index.js",
   "scripts": {
-    "lint": "standard",
+    "lint": "eslint .",
     "test": "tap test.js",
     "test-report": "tap --coverage-report=html"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/RafaelGSS/fastify-amqp.git"
+    "url": "git+https://github.com/wouldgo/fastify-amqp.git"
   },
   "keywords": [
     "rabbitmq",
@@ -21,11 +21,17 @@
     "fastify"
   ],
   "author": "Rafael Gonzaga - @rafaelgss",
+  "contributors": [
+    {
+      "name": "Dario Andrei",
+      "email": "wouldgo84@gmail.com"
+    }
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/RafaelGSS/fastify-amqp/issues"
+    "url": "https://github.com/wouldgo/fastify-amqp/issues"
   },
-  "homepage": "https://github.com/RafaelGSS/fastify-amqp#readme",
+  "homepage": "https://github.com/wouldgo/fastify-amqp#readme",
   "dependencies": {
     "amqplib": "^0.7.1",
     "camelcase": "^6.0.0",
@@ -34,9 +40,11 @@
   "devDependencies": {
     "fastify": "^3.14.2",
     "pre-commit": "^1.2.2",
-    "standard": "^16.0.3",
     "tap": "^15.0.4",
-    "typescript": "^4.2.4"
+    "eslint": "7.21.0",
+    "eslint-plugin-import": "2.22.1",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-promise": "4.3.1"
   },
   "pre-commit": [
     "lint",

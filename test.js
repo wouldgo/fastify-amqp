@@ -1,153 +1,158 @@
-const { test } = require('tap')
+/* eslint-disable import/no-extraneous-dependencies */
+'use strict';
 
-const Fastify = require('fastify')
-const fastifyAmqp = require('./index')
-const { promisify } = require('util')
-const waitABit = promisify(setTimeout)
+const {promisify} = require('util')
+  , {test} = require('tap')
+  , fastify = require('fastify')
+  , fastifyAmqp = require('./index')
+  , waitABit = promisify(setTimeout);
 
-test('localhost guest:guest to / not permitted', async (t) => {
-  t.plan(4)
-  const app = Fastify()
+test('localhost guest:guest to / not permitted', async subTest => {
+  subTest.plan(4);
+  const server = fastify();
 
-  t.teardown(() => app.close())
+  subTest.teardown(() => server.close());
   try {
-    await app.register(fastifyAmqp, {})
+
+    await server.register(fastifyAmqp, {});
   } catch (err) {
-    t.equal(typeof err, typeof {})
-    t.ok(err instanceof Error)
+    subTest.equal(typeof err, typeof {});
+    subTest.ok(err instanceof Error);
 
-    t.ok(err.message, 'Handshake terminated by server: 403 (ACCESS-REFUSED) with message "ACCESS_REFUSED - Login was refused using authentication mechanism PLAIN. For details see the broker logfile.')
-    t.notOk(app.amqp, 'Should not has amqp')
+    subTest.ok(err.message, 'Handshake terminated by server: 403 (ACCESS-REFUSED) with message "ACCESS_REFUSED - Login was refused using authentication mechanism PLAIN. For details see the broker logfile.');
+    subTest.notOk(server.amqp, 'Should not has amqp');
   }
-})
+});
 
-test('localhost me:me to / permitted', async t => {
-  t.plan(1)
-  const app = Fastify()
+test('localhost me:me to / permitted', async subTest => {
+  subTest.plan(1);
+  const server = fastify();
 
-  t.teardown(() => app.close())
+  subTest.teardown(() => server.close());
 
   try {
-    await app.register(fastifyAmqp, {
-      username: 'me',
-      password: 'me'
-    })
+    await server.register(fastifyAmqp, {
+      'username': 'me',
+      'password': 'me'
+    });
   } catch (err) {
-    t.fail('Should connect with these attributes!')
+    subTest.fail('Should connect with these attributes!');
   }
 
-  const { amqp } = app
+  const {amqp} = server;
 
-  t.ok(amqp)
-})
+  subTest.ok(amqp);
+});
 
-test('localhost me:me to / publish with channel and he cant', async t => {
-  t.plan(6)
-  const app = Fastify()
+test('localhost me:me to / publish with channel and he cant', async subTest => {
+  subTest.plan(6);
+  const server = fastify();
 
   try {
-    await app.register(fastifyAmqp, {
-      username: 'me',
-      password: 'me',
-      connectionHandlers: {
-        close: () => {
-          t.pass('Everything is fine')
+    await server.register(fastifyAmqp, {
+      'username': 'me',
+      'password': 'me',
+      'connectionHandlers': {
+        'close': () => {
+          subTest.pass('Everything is fine');
         }
       },
-      channelHandlers: {
-        error: (hostname, aVhost, err) => {
-          const { message } = err
+      'channelHandlers': {
+        'error': (hostname, aVhost, err) => {
+          const {message} = err;
 
-          t.ok(hostname, 'localhost')
-          t.ok(aVhost, '/')
-          t.ok(message, 'Channel closed by server: 404 (NOT-FOUND) with message "NOT_FOUND - no exchange \'not-exists\' in vhost \'/\'"')
+          subTest.ok(hostname, 'localhost');
+          subTest.ok(aVhost, '/');
+          subTest.ok(message, 'Channel closed by server: 404 (NOT-FOUND) with message "NOT_FOUND - no exchange \'not-exists\' in vhost \'/\'"');
         },
-        close: () => {
-          t.pass('Everything is fine')
+        'close': () => {
+          subTest.pass('Everything is fine');
         }
       }
-    })
+    });
   } catch (err) {
-    t.fail('Should connect with these attributes!')
+    subTest.fail('Should connect with these attributes!');
   }
 
-  const { amqp } = app
+  const {amqp} = server;
 
-  t.ok(amqp)
+  subTest.ok(amqp);
 
-  const { '/': rootVh } = amqp
+  const {'/': rootVh} = amqp;
 
-  const aChannel = await rootVh.createChannel()
-  aChannel.publish('not-exists', 'none', Buffer.from([1]))
+  const aChannel = await rootVh.createChannel();
 
-  await waitABit(1000)
+  aChannel.publish('not-exists', 'none', Buffer.from([1]));
 
-  app.close()
-  await waitABit(1000)
-})
+  await waitABit(1000);
 
-test('localhost me:me to / publish with confirm channel and he cant', async t => {
-  t.plan(6)
-  const app = Fastify()
+  server.close();
+  await waitABit(1000);
+});
+
+test('localhost me:me to / publish with confirm channel and he cant', async subTest => {
+  subTest.plan(6);
+  const server = fastify();
 
   try {
-    await app.register(fastifyAmqp, {
-      username: 'me',
-      password: 'me',
-      connectionHandlers: {
-        close: () => {
-          t.pass('Everything is fine')
+    await server.register(fastifyAmqp, {
+      'username': 'me',
+      'password': 'me',
+      'connectionHandlers': {
+        'close': () => {
+          subTest.pass('Everything is fine');
         }
       },
-      channelHandlers: {
-        error: (hostname, aVhost, err) => {
-          const { message } = err
+      'channelHandlers': {
+        'error': (hostname, aVhost, err) => {
+          const {message} = err;
 
-          t.ok(hostname, 'localhost')
-          t.ok(aVhost, '/')
-          t.ok(message, 'Channel closed by server: 404 (NOT-FOUND) with message "NOT_FOUND - no exchange \'not-exists\' in vhost \'/\'"')
+          subTest.ok(hostname, 'localhost');
+          subTest.ok(aVhost, '/');
+          subTest.ok(message, 'Channel closed by server: 404 (NOT-FOUND) with message "NOT_FOUND - no exchange \'not-exists\' in vhost \'/\'"');
         },
-        close: () => {
-          t.pass('Everything is fine')
+        'close': () => {
+          subTest.pass('Everything is fine');
         }
       }
-    })
+    });
   } catch (err) {
-    t.fail('Should connect with these attributes!')
+    subTest.fail('Should connect with these attributes!');
   }
 
-  const { amqp } = app
+  const {amqp} = server;
 
-  t.ok(amqp)
+  subTest.ok(amqp);
 
-  const { '/': rootVh } = amqp
+  const {'/': rootVh} = amqp;
 
-  const aChannel = await rootVh.createConfirmChannel()
-  aChannel.publish('not-exists', 'none', Buffer.from([1]))
+  const aChannel = await rootVh.createConfirmChannel();
 
-  await waitABit(1000)
+  aChannel.publish('not-exists', 'none', Buffer.from([1]));
 
-  app.close()
-  await waitABit(1000)
-})
+  await waitABit(1000);
 
-test('localhost me:me to / permitted (specified)', async t => {
-  t.plan(1)
-  const app = Fastify()
+  server.close();
+  await waitABit(1000);
+});
 
-  t.teardown(() => app.close())
+test('localhost me:me to / permitted (specified)', async subTest => {
+  subTest.plan(1);
+  const app = fastify();
+
+  subTest.teardown(() => app.close());
 
   try {
     await app.register(fastifyAmqp, {
-      username: 'me',
-      password: 'me',
-      vhost: '/'
-    })
+      'username': 'me',
+      'password': 'me',
+      'vhost': '/'
+    });
   } catch (err) {
-    t.fail('Should connect with these attributes!')
+    subTest.fail('Should connect with these attributes!');
   }
 
-  const { amqp } = app
+  const {amqp} = app;
 
-  t.ok(amqp)
-})
+  subTest.ok(amqp);
+});
