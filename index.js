@@ -19,12 +19,19 @@ const fastifyAmqp = async function fastifyAmqp (fastify, {
   locale,
   frameMax,
   heartbeat = 60,
-  vhost = '/',
+  vhost,
   vhosts = [],
   connectionHandlers = {},
   channelHandlers = {}
 }) {
-  const currentVhosts = [vhost].concat(vhosts)
+  const currentVhosts = vhosts
+  if (vhost != null) {
+    currentVhosts.push(vhost)
+  }
+
+  if (vhosts.length === 0) {
+    currentVhosts.push('/')
+  }
   const connections = {}
   for (const aVhost of currentVhosts) {
     const aConnection = await amqpClient.connect({

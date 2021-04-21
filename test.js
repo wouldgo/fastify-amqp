@@ -5,18 +5,11 @@ const fastifyAmqp = require('./index')
 const { promisify } = require('util')
 const waitABit = promisify(setTimeout)
 
-function build (t) {
-  const app = Fastify()
-
-  t.teardown(app.close.bind(app))
-
-  return app
-}
-
 test('localhost guest:guest to / not permitted', async (t) => {
   t.plan(4)
-  const app = build(t)
+  const app = Fastify()
 
+  t.teardown(() => app.close())
   try {
     await app.register(fastifyAmqp, {})
   } catch (err) {
@@ -30,7 +23,9 @@ test('localhost guest:guest to / not permitted', async (t) => {
 
 test('localhost me:me to / permitted', async t => {
   t.plan(1)
-  const app = build(t)
+  const app = Fastify()
+
+  t.teardown(() => app.close())
 
   try {
     await app.register(fastifyAmqp, {
@@ -130,4 +125,25 @@ test('localhost me:me to / publish with confirm channel and he cant', async t =>
 
   app.close()
   await waitABit(1000)
+})
+
+test('localhost me:me to / permitted (specified)', async t => {
+  t.plan(1)
+  const app = Fastify()
+
+  t.teardown(() => app.close())
+
+  try {
+    await app.register(fastifyAmqp, {
+      username: 'me',
+      password: 'me',
+      vhost: '/'
+    })
+  } catch (err) {
+    t.fail('Should connect with these attributes!')
+  }
+
+  const { amqp } = app
+
+  t.ok(amqp)
 })
